@@ -128,32 +128,20 @@ public class BrainIndex
         index.set((int) (p.x / interval.x), (int) (p.y / interval.y), (int) (p.z / interval.z));
     }
     
-    public void assignTracks(RegionOfInterest roi)
-    {
-        roi.getFaces().forEach(f -> assignTracks(roi, f));
-    }
-    
-    private void assignTracks(RegionOfInterest roi, Face3i face)
-    {        
-        ArrayList<TrackIntersection>[][][] facePlane;
+    public ArrayList<TrackIntersection> getTrackIntersections(Face3i face)
+    {   
         if (face.w == Face3i.X_FACET)
         {
-            facePlane = xPlane;
+            return xPlane[face.x][face.y][face.z];
         }
         else if (face.w == Face3i.Y_FACET)
         {
-            facePlane = yPlane;
+            return yPlane[face.x][face.y][face.z];
         }
         else
         {
-            facePlane = zPlane;
-        }
-        
-        facePlane[face.x][face.y][face.z]
-                .forEach(i -> 
-                {         
-                    roi.addIntersection(i); 
-                });
+            return zPlane[face.x][face.y][face.z];
+        }        
     }
     
     public ArrayList<TrackIntersection>[][][] getXPlane()

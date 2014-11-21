@@ -34,7 +34,8 @@ public class RegionOfInterest
     private int yDim;
     private int zDim;
     private final Set<Face3i> faces = new HashSet<>();
-    boolean[][][] roi;
+    private boolean[][][] roiMask;
+    private final Map<Track, List<Integer>> trackIntersections;
     
     public RegionOfInterest(BrainIndex brainIndex, String name)
     {
@@ -43,18 +44,19 @@ public class RegionOfInterest
 
     public RegionOfInterest(int xDim, int yDim, int zDim, String name)
     {
+        trackIntersections = new HashMap<>();
         this.xDim = xDim;
         this.yDim = yDim;
         this.zDim = zDim;
         this.name = name;
-        roi = new boolean[xDim][yDim][zDim];
+        roiMask = new boolean[xDim][yDim][zDim];
         for (int i = 0; i < xDim; i++)
         {
             for (int j = 0; j < yDim; j++)
             {
                 for (int k = 0; k < zDim; k++)
                 {
-                    roi[i][j][k] = false;
+                    roiMask[i][j][k] = false;
                 }
             }
         }
@@ -68,7 +70,7 @@ public class RegionOfInterest
             {
                 for (int k = 0; k < mri.zDim(); k++)
                 {
-                    roi[i][j][k] = mri.getVoxelAsBoolean(i, j, k);                    
+                    roiMask[i][j][k] = mri.getVoxelAsBoolean(i, j, k);                    
                 }
             }
         }
@@ -77,12 +79,12 @@ public class RegionOfInterest
     
     public void setVoxel(int i, int j, int k)
     {
-        roi[i][j][k] = true;
+        roiMask[i][j][k] = true;
     }
     
     public void clearVoxel(int i, int j, int k)
     {
-        roi[i][j][k] = false;
+        roiMask[i][j][k] = false;
     }
     
     public void computeFaces()
@@ -94,34 +96,34 @@ public class RegionOfInterest
             {
                 for (int k = 0; k < zDim; k++)
                 {
-                   if (roi[i][j][k])
+                   if (roiMask[i][j][k])
                    {
                        // X Plane                       
-                       if (i == 0 || !roi[i - 1][j][k])
+                       if (i == 0 || !roiMask[i - 1][j][k])
                        {                           
                            faces.add(new Face3i(i, j, k, -1, Face3i.X_FACET));
                        }                       
-                       if (i == xDim - 1 || !roi[i + 1][j][k])
+                       if (i == xDim - 1 || !roiMask[i + 1][j][k])
                        {
                            faces.add(new Face3i(i + 1, j, k, 1, Face3i.X_FACET));
                        }
                        
                        // Y Plane                       
-                       if (j == 0 || !roi[i][j - 1][k])
+                       if (j == 0 || !roiMask[i][j - 1][k])
                        {                           
                            faces.add(new Face3i(i, j, k, -1, Face3i.Y_FACET));
                        }                       
-                       if (j == yDim - 1 || !roi[i][j + 1][k])
+                       if (j == yDim - 1 || !roiMask[i][j + 1][k])
                        {
                            faces.add(new Face3i(i, j + 1, k, 1, Face3i.Y_FACET));
                        }
                        
                        // Z Plane                       
-                       if (k == 0 || !roi[i][j][k - 1])
+                       if (k == 0 || !roiMask[i][j][k - 1])
                        {                           
                            faces.add(new Face3i(i, j, k, -1, Face3i.Z_FACET));
                        }                       
-                       if (k == zDim - 1 || !roi[i][j][k + 1])
+                       if (k == zDim - 1 || !roiMask[i][j][k + 1])
                        {
                            faces.add(new Face3i(i, j, k + 1, 1, Face3i.Z_FACET));
                        }                       
@@ -143,25 +145,25 @@ public class RegionOfInterest
 
     public int numberOfTracks()
     {        
-        return trackInteresections.size();
+        return trackIntersections.size();
     }
 
     public void assignTracks(BrainIndex bi)
     {
-        bi.assignTracks(this);
-    }
-
-    Map<Track, List<ROIIntersection>> trackInteresections = new HashMap<>();
-
-    public void addIntersection(TrackIntersection trackIntersection)
-    {
-        List<ROIIntersection> intersectionList = trackInteresections.get(trackIntersection.track);
-        if (intersectionList == null)
-        {
-            intersectionList = new ArrayList<>();
-            trackInteresections.put(trackIntersection.track, intersectionList);
-        }
-        intersectionList.add(new ROIIntersection(this, trackIntersection.address));
+        faces.stream().forEach((Face3i f) -> 
+        {            
+            bi.getTrackIntersections(f).stream().forEach((TrackIntersection ti) -> 
+            {
+                List<Integer> intersctions = trackIntersections.get(ti.track);
+                if (intersctions == null)
+                {
+                    intersctions = new ArrayList<>();
+                    trackIntersections.put(ti.track, intersctions);
+                }
+                intersctions.add(ti.address);
+            }
+            );
+        });
     }
 
     public List<Track> commonTracks(RegionOfInterest target)
@@ -170,9 +172,11 @@ public class RegionOfInterest
         {
             throw new Error("source and target must be different");
         }
+        
         return getTrackStream()
-                .filter(sourceTrack -> target.getTrackStream()
-                        .anyMatch(targettrack -> targettrack == sourceTrack))
+                .filter(sourceTrack -> target
+                    .getTrackStream()
+                    .anyMatch(targettrack -> targettrack == sourceTrack))
                 .collect(Collectors.toList());
     }
 
@@ -187,27 +191,13 @@ public class RegionOfInterest
                 interesctions.addAll(getIntersectionAdresses(sourceTrack));
                 partitionedTracks.add(new PartitionedTrack(sourceTrack, interesctions));
             }
-        }
-        );
+        });
         return partitionedTracks;
-    }
-
-    public List<ROIIntersection> getIntersectionAdresses(Track t)
-    {
-        List<ROIIntersection> intersectionList = trackInteresections.get(t);
-        if (intersectionList == null)
-        {
-            return Collections.EMPTY_LIST;
-        }
-        else
-        {
-            return intersectionList;
-        }
     }
 
     public Stream<Track> getTrackStream()
     {
-        return trackInteresections.keySet().stream();
+        return trackIntersections.keySet().stream();
     }
 
     @Override
