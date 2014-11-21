@@ -147,12 +147,11 @@ public class BrainIndex
         else
         {
             facePlane = zPlane;
-        }        
-        // face.initialiseIntersections();
+        }
+        
         facePlane[face.x][face.y][face.z]
                 .forEach(i -> 
-                {
-                    // face.addIntersection(i);
+                {         
                     roi.addIntersection(i); 
                 });
     }

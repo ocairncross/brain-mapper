@@ -39,9 +39,8 @@ public class MRISourceCollection
                         long tStart = System.currentTimeMillis();
                         MRISource mask = new MRISource(f.toFile());
                         String fileName = f.getFileName().toString();
-                        RegionOfInterest roi = new RegionOfInterest(index, fileName);
-                        roi.setVoxel(mask);
-                        roi.assignTracks();
+                        RegionOfInterest roi = new RegionOfInterest(index, fileName);                        
+                        roi.assignTracks(index);
                         roiList.add(roi);
                         long tElapsed = System.currentTimeMillis() - tStart;
                         log.info("created ROI {}  with {} tracks in {}ms", fileName, roi.numberOfTracks(), tElapsed);
@@ -67,39 +66,9 @@ public class MRISourceCollection
                     long tStart = System.currentTimeMillis();
                     List<PartitionedTrack> segments = sourceROI.calculateSegments(t);
                     long eTime = System.currentTimeMillis() - tStart;
-                    String logString = String.format("%s -> %s,%d,%d,%d", sourceROI.name, t.name, segments.size(), eTime, runtime.freeMemory());
+                    String logString = String.format("%s -> %s,%d,%d,%d", sourceROI.getName(), t.getName(), segments.size(), eTime, runtime.freeMemory());
                     log.info(logString);
                 });
-        }
-    }
-    
-    public static void testFaceCount(File sourceDirectory, BrainIndex index)
-    {
-        try
-        { 
-            Files.list(sourceDirectory.toPath())
-                    .forEach(new Consumer<Path>()
-            {
-
-                public void accept(Path f)
-                {
-                    MRISource mask = new MRISource(f.toFile());
-                    String fileName = f.getFileName().toString();
-                    RegionOfInterest roi = new RegionOfInterest(index, fileName + " vox");
-                    roi.setVoxel(mask);
-                    System.out.printf("ROI %s = %d\n", roi.name, roi.getFaces().size());
-                    
-                    RegionOfInterest roi2 = new RegionOfInterest(index, fileName + " mri");
-                    roi2.setMRI(mask);
-                    roi.getFaces().removeAll(roi2.getFaces());
-                    System.out.printf("ROI %s = %d, not common = % d\n", roi2.name, roi2.getFaces().size(), roi.getFaces().size());
-                    
-                    
-                }
-            });
-        } catch (IOException ex)
-        {
-            Logger.getLogger(MRISourceCollection.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

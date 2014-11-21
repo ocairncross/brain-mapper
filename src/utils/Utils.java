@@ -5,10 +5,10 @@
  */
 package utils;
 
+import au.edu.uq.rcc.RegionOfInterest;
+import au.edu.uq.rcc.index.BrainIndex;
 import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
-import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,5 +36,31 @@ public class Utils
         LoggerContext lc = (LoggerContext) LoggerFactory.getILoggerFactory();
         StatusPrinter.print(lc);
     }
+    
+    public static void logInitial()
+    {
+        Utils.printClassPath();
+        Runtime r = Runtime.getRuntime();
+        log.info(String.format("Executing with %s processors in thread pool", r.availableProcessors()));
+        log.info("Total memory {}", r.totalMemory());
+        log.info("Free memory {}", r.freeMemory());
+    }
+    
+    public static void setMask(int x, int y, int z, int s, RegionOfInterest roi)
+    {        
+        for (int i = 0; i < s; i++)
+        {
+            for (int j = 0; j < s; j++)
+            {
+                for (int k = 0; k < s; k++)
+                {
+                    roi.setVoxel(i + x, j + y, k + z);
+                }
+            }
+        }
+        
+    }
+    
+
 
 }

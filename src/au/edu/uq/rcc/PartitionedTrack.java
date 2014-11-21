@@ -64,7 +64,7 @@ public class PartitionedTrack
     {
         String collect = intersections
                 .stream()
-                .map(i -> String.format("[%s, %d]", i.roi.name, i.address))
+                .map(i -> String.format("[%s, %d]", i.roi.getName(), i.address))
                 .collect(Collectors.joining(", "));
         return String.format("%s : %s", this.hashCode(), collect);
     }
