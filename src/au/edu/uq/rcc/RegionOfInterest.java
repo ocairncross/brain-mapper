@@ -6,19 +6,19 @@
 package au.edu.uq.rcc;
 
 import au.edu.uq.rcc.index.BrainIndex;
-import au.edu.uq.rcc.index.ROIIntersection;
 import au.edu.uq.rcc.index.TrackIntersection;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.vecmath.Tuple3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import utils.MinMax;
 
 /**
  *
@@ -26,113 +26,133 @@ import org.slf4j.LoggerFactory;
  */
 public class RegionOfInterest
 {
-    
+
     private static final Logger log = LoggerFactory.getLogger(RegionOfInterest.class);
 
     private String name;
-    private int xDim;
-    private int yDim;
-    private int zDim;
+    private Tuple3i dim;
     private final Set<Face3i> faces = new HashSet<>();
     private boolean[][][] roiMask;
     private final Map<Track, List<Integer>> trackIntersections;
-    
+
     public RegionOfInterest(BrainIndex brainIndex, String name)
     {
-        this(brainIndex.getDim().x, brainIndex.getDim().y, brainIndex.getDim().z, name);
+        this(brainIndex.getDimentions(), name);
     }
 
-    public RegionOfInterest(int xDim, int yDim, int zDim, String name)
+    public RegionOfInterest(MRISource mriMask, String name)
+    {
+        this(mriMask.getDimensions(), name);
+        setMRIMask(mriMask);
+    }
+
+    public RegionOfInterest(Tuple3i dim, String name)
     {
         trackIntersections = new HashMap<>();
-        this.xDim = xDim;
-        this.yDim = yDim;
-        this.zDim = zDim;
+        this.dim = dim;
         this.name = name;
-        roiMask = new boolean[xDim][yDim][zDim];
-        for (int i = 0; i < xDim; i++)
+        roiMask = new boolean[dim.x][dim.y][dim.z];
+        for (int i = 0; i < dim.x; i++)
         {
-            for (int j = 0; j < yDim; j++)
+            for (int j = 0; j < dim.y; j++)
             {
-                for (int k = 0; k < zDim; k++)
-                {
-                    roiMask[i][j][k] = false;
-                }
+                Arrays.fill(roiMask[i][j], false);
             }
         }
     }
-    
-    public void setMRIMask(MRISource mri)
-    {        
-        for (int i = 0; i < mri.xDim(); i++)
+
+    public Tuple3i getDimensions()
+    {
+        return dim;
+    }
+
+    public boolean[][][] getRoiMask()
+    {
+        return roiMask;
+    }
+
+    public final void setMRIMask(MRISource mri)
+    {
+        Tuple3i roiDim = mri.getDimensions();
+        for (int i = 0; i < roiDim.x; i++)
         {
-            for (int j = 0; j < mri.yDim(); j++)
+            for (int j = 0; j < roiDim.y; j++)
             {
-                for (int k = 0; k < mri.zDim(); k++)
+                for (int k = 0; k < roiDim.z; k++)
                 {
-                    roiMask[i][j][k] = mri.getVoxelAsBoolean(i, j, k);                    
+                    roiMask[i][j][k] = mri.getVoxelAsBoolean(i, j, k);
                 }
             }
         }
         computeFaces();
     }
-    
+
     public void setVoxel(int i, int j, int k)
     {
         roiMask[i][j][k] = true;
     }
-    
+
     public void clearVoxel(int i, int j, int k)
     {
         roiMask[i][j][k] = false;
     }
-    
+
     public void computeFaces()
     {
         faces.clear();
-        for (int i = 0; i < xDim; i++)
+        for (int i = 0; i < dim.x; i++)
         {
-            for (int j = 0; j < yDim; j++)
+            for (int j = 0; j < dim.y; j++)
             {
-                for (int k = 0; k < zDim; k++)
+                for (int k = 0; k < dim.z; k++)
                 {
-                   if (roiMask[i][j][k])
-                   {
-                       // X Plane                       
-                       if (i == 0 || !roiMask[i - 1][j][k])
-                       {                           
-                           faces.add(new Face3i(i, j, k, -1, Face3i.X_FACET));
-                       }                       
-                       if (i == xDim - 1 || !roiMask[i + 1][j][k])
-                       {
-                           faces.add(new Face3i(i + 1, j, k, 1, Face3i.X_FACET));
-                       }
-                       
-                       // Y Plane                       
-                       if (j == 0 || !roiMask[i][j - 1][k])
-                       {                           
-                           faces.add(new Face3i(i, j, k, -1, Face3i.Y_FACET));
-                       }                       
-                       if (j == yDim - 1 || !roiMask[i][j + 1][k])
-                       {
-                           faces.add(new Face3i(i, j + 1, k, 1, Face3i.Y_FACET));
-                       }
-                       
-                       // Z Plane                       
-                       if (k == 0 || !roiMask[i][j][k - 1])
-                       {                           
-                           faces.add(new Face3i(i, j, k, -1, Face3i.Z_FACET));
-                       }                       
-                       if (k == zDim - 1 || !roiMask[i][j][k + 1])
-                       {
-                           faces.add(new Face3i(i, j, k + 1, 1, Face3i.Z_FACET));
-                       }                       
-                   }                    
+                    if (roiMask[i][j][k])
+                    {
+                        // X Plane                       
+                        if (i == 0 || !roiMask[i - 1][j][k])
+                        {
+                            faces.add(new Face3i(i, j, k, -1, Face3i.X_FACET));
+                        }
+                        if (i == dim.x - 1 || !roiMask[i + 1][j][k])
+                        {
+                            faces.add(new Face3i(i + 1, j, k, 1, Face3i.X_FACET));
+                        }
+
+                        // Y Plane                       
+                        if (j == 0 || !roiMask[i][j - 1][k])
+                        {
+                            faces.add(new Face3i(i, j, k, -1, Face3i.Y_FACET));
+                        }
+                        if (j == dim.y - 1 || !roiMask[i][j + 1][k])
+                        {
+                            faces.add(new Face3i(i, j + 1, k, 1, Face3i.Y_FACET));
+                        }
+
+                        // Z Plane                       
+                        if (k == 0 || !roiMask[i][j][k - 1])
+                        {
+                            faces.add(new Face3i(i, j, k, -1, Face3i.Z_FACET));
+                        }
+                        if (k == dim.z - 1 || !roiMask[i][j][k + 1])
+                        {
+                            faces.add(new Face3i(i, j, k + 1, 1, Face3i.Z_FACET));
+                        }
+                    }
                 }
             }
         }
     }
-    
+
+    public Map<Track, List<Integer>> getTrackIntersection()
+    {
+        return trackIntersections;
+    }
+
+    public List<Integer> getIntersections(Track t)
+    {
+        return trackIntersections.get(t);
+    }
+
     public String getName()
     {
         return name;
@@ -144,15 +164,15 @@ public class RegionOfInterest
     }
 
     public int numberOfTracks()
-    {        
+    {
         return trackIntersections.size();
     }
 
     public void assignTracks(BrainIndex bi)
     {
-        faces.stream().forEach((Face3i f) -> 
-        {            
-            bi.getTrackIntersections(f).stream().forEach((TrackIntersection ti) -> 
+        faces.stream().forEach((Face3i f) ->
+        {
+            bi.getTrackIntersections(f).stream().forEach((TrackIntersection ti) ->
             {
                 List<Integer> intersctions = trackIntersections.get(ti.track);
                 if (intersctions == null)
@@ -166,38 +186,47 @@ public class RegionOfInterest
         });
     }
 
-    public List<Track> commonTracks(RegionOfInterest target)
-    {
-        if (target == this)
-        {
-            throw new Error("source and target must be different");
-        }
-        
-        return getTrackStream()
-                .filter(sourceTrack -> target
-                    .getTrackStream()
-                    .anyMatch(targettrack -> targettrack == sourceTrack))
-                .collect(Collectors.toList());
-    }
-
     public List<PartitionedTrack> calculateSegments(RegionOfInterest targetROI)
     {
         List<PartitionedTrack> partitionedTracks = new ArrayList<>();
-        getTrackStream().forEach(sourceTrack ->
+        trackIntersections.keySet().stream().forEach((Track st) ->
         {
-            List<ROIIntersection> interesctions = targetROI.getIntersectionAdresses(sourceTrack);
-            if (!interesctions.isEmpty())
+            if (targetROI.getTrackIntersection().keySet().contains(st))
             {
-                interesctions.addAll(getIntersectionAdresses(sourceTrack));
-                partitionedTracks.add(new PartitionedTrack(sourceTrack, interesctions));
+                PartitionedTrack partitionedTrack = new PartitionedTrack(st);
+                partitionedTrack.addIntersections(this);
+                partitionedTrack.addIntersections(targetROI);
             }
         });
         return partitionedTracks;
     }
 
-    public Stream<Track> getTrackStream()
+    public Set<Track> getTracks()
     {
-        return trackIntersections.keySet().stream();
+        return trackIntersections.keySet();
+    }
+
+    public List<Track> getCloseTracks(int extension)
+    {
+        List<Track> closeTracks = new ArrayList<>();
+        for (Track t : getTracks())
+        {
+            MinMax interval = new MinMax(0, t.numberOfVertices());
+
+//            for (Integer i : trackIntersections.get(t))
+//            {
+//                interval.setVal(i + extension);
+//                interval.setVal(i - extension);
+//            }
+            
+            Integer i = trackIntersections.get(t).get(0);
+            interval.setVal(i + extension);
+            interval.setVal(i - extension);
+
+            Track closeTrack = t.getSegment((int) interval.getMin(), (int) interval.getMax());
+            closeTracks.add(closeTrack);
+        }
+        return closeTracks;
     }
 
     @Override

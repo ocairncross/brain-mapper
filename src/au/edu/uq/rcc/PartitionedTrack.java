@@ -17,31 +17,38 @@ import java.util.stream.Collectors;
 public class PartitionedTrack
 {
     private final Track track;
-    private List<ROIIntersection> intersections;
+    private final List<ROIIntersection> ROIIntersections;
+    boolean sorted = false;
 
-    public PartitionedTrack(Track track, List<ROIIntersection> intersections)
+    public PartitionedTrack(Track track)
     {
+        ROIIntersections = new ArrayList<>();
         this.track = track;
-        addIntersections(intersections);
     }
     
-    public final void addIntersections(List<ROIIntersection> intersections)
+    public final void addIntersections(RegionOfInterest roi)
     {
-        intersections.sort((i, j) -> i.address - j.address);
-        this.intersections = intersections;
+        sorted = false;        
+        roi.getIntersections(track).stream()
+                .forEach(i -> ROIIntersections.add(new ROIIntersection(roi, i)));
     }
     
     public List<TrackInterval> getTrackIntervals()
     {        
+        if (!sorted)
+        {            
+            ROIIntersections.sort((i, j) -> i.address - j.address);
+            sorted = true;
+        }
         List<TrackInterval> trackIntervals = new ArrayList<>();
         // Track crossings from one ROI to another.
         // ROI_1 ---> ROI_2 ----> ROI_1 is illegal as it means we have a degnerate ROI.
         // we will flag this situation.
-        int BorderCrossings = 0; 
-        for (int i = 0; i < intersections.size() - 1; i++)
+        int BorderCrossings = 0;
+        for (int i = 0; i < ROIIntersections.size() - 1; i++)
         {
-            ROIIntersection intersec0 = intersections.get(i);
-            ROIIntersection intersec1 = intersections.get(i + 1);
+            ROIIntersection intersec0 = ROIIntersections.get(i);
+            ROIIntersection intersec1 = ROIIntersections.get(i + 1);
             if (intersec0.roi != intersec1.roi)
             {
                 BorderCrossings++;
@@ -62,7 +69,7 @@ public class PartitionedTrack
     @Override
     public String toString()
     {
-        String collect = intersections
+        String collect = ROIIntersections
                 .stream()
                 .map(i -> String.format("[%s, %d]", i.roi.getName(), i.address))
                 .collect(Collectors.joining(", "));

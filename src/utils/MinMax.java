@@ -26,6 +26,8 @@ public class MinMax implements Serializable
     private double max = 0;
     private boolean initialised;
     private final List<Vector3f> colourVectors = new ArrayList<>();
+    private double floor = Double.NEGATIVE_INFINITY;
+    private double ceiling = Double.POSITIVE_INFINITY;
     
     public MinMax()
     {
@@ -37,35 +39,11 @@ public class MinMax implements Serializable
         colourVectors.add(new Vector3f(0.316f, 0.316f, 0.991f)); // blue
         colourVectors.add(new Vector3f(0.718f, 0.0f, 0.718f)); // magenta
     }
-
-    public MinMax(MinMax i)
+    
+    public MinMax(double floor, double ceiling)
     {
-        this();
-        setVal(i.getMax());
-        setVal(i.getMin());
-    }
-
-    public MinMax(double newVal)
-    {
-        this();
-        min = max = newVal;
-        initialised = true;
-    }
-
-    public MinMax(double i, double k)
-    {
-        this();
-        if (i <= k)
-        {
-            min = i;
-            max = k;
-        }
-        else
-        {
-            max = i;
-            min = k;
-        }
-        initialised = true;
+        this.floor = floor;
+        this.ceiling = ceiling;
     }
 
     public boolean isInitialised()
@@ -80,22 +58,47 @@ public class MinMax implements Serializable
         {
             if (newVal < min)
             {
-                min = newVal;
+                setMin(newVal);
                 change = true;
             }
             if (newVal > max)
             {
-                max = newVal;
+                setMax(newVal);
                 change = true;
             }
         }
         else
         {
-            min = max = newVal;
+            setMin(newVal);
+            setMax(newVal);            
             change = true;
             initialised = true;
         }
         return change;
+    }
+    
+    private void setMin(double i)
+    {
+        if (i > floor)
+        {
+            min = i;
+        }
+        else
+        {
+            min = floor;
+        }
+    }
+    
+    private void setMax(double i)
+    {
+        if (i < ceiling)
+        {
+            max = i;
+        }
+        else
+        {
+            max = ceiling;
+        }
     }
 
     public boolean setVal(MinMax newVal)

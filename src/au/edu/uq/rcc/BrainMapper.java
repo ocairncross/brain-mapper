@@ -11,6 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.profiler.Profiler;
 import utils.BMProperties;
+import utils.BoundingBox;
 import utils.Utils;
 
 /**
@@ -40,12 +41,15 @@ public class BrainMapper
         MRISource mri = new MRISource(mriFile);
         profiler.start("build index");
         BrainIndex brainIndex = new BrainIndex(tl, mri);
+        BoundingBox transformedBB = brainIndex.getTransformedBB(tl);
+        System.out.printf("BB:\n %s\n", transformedBB);
         
+        /*        
         RegionOfInterest testROI = new RegionOfInterest(brainIndex, "testROI");
-        Utils.setMask(10, 10, 10, 5, testROI);        
-        testROI.computeFaces();        
+        Utils.setMask(30, 50, 10, 10, testROI);        
+        testROI.computeFaces();
         testROI.assignTracks(brainIndex);
-        long count = testROI.getTrackStream().count();
+        long count = testROI.getTracks().size();
         
         System.out.printf("faces = %d tracks = %d\n", testROI.getFaces().size(), count);
 
@@ -55,7 +59,8 @@ public class BrainMapper
             MRISourceCollection roiCollection = new MRISourceCollection(roiDirectory, brainIndex);
             roiCollection.doMap();
         }
-
+        */
+        
         profiler.stop();
         profiler.print();
     }

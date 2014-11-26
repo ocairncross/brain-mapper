@@ -18,6 +18,7 @@ import utils.BoundingBox;
  */
 public class Track
 {
+    //todo get rid of bounding box stuff...
     private final List<Tuple3d> vertices = new ArrayList<>();
     private final BoundingBox boundingBox = new BoundingBox();
     
@@ -25,7 +26,19 @@ public class Track
     {
         Point3d p = new Point3d(x, y, z);
         vertices.add(p);
-        boundingBox.add(p);        
+        boundingBox.add(p);
+    }
+    
+    public void addPointList(List<Tuple3d> points)
+    {
+        vertices.addAll(points);
+    }
+    
+    public Track getSegment(int start, int end)
+    {
+        Track segment = new Track();
+        segment.addPointList(new ArrayList<>(vertices.subList(start, end)));
+        return segment;
     }
     
     public List<Tuple3d> getVertices()

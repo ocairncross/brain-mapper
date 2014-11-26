@@ -13,7 +13,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.vecmath.Matrix3d;
+import javax.vecmath.Point3i;
 import javax.vecmath.Tuple3d;
+import javax.vecmath.Tuple3i;
 import javax.vecmath.Vector3d;
 
 /**
@@ -63,19 +65,9 @@ public class MRISource
         return getVoxel(i, j, k) > 0;
     }
     
-    public int xDim()
+    public Tuple3i getDimensions()
     {
-        return dim[1];
-    }
-    
-    public int yDim()
-    {
-        return dim[2];
-    }
-    
-    public int zDim()
-    {
-        return dim[3];
+        return new Point3i(dim[1], dim[2], dim[3]);
     }
     
     public double getMaxVoxel()
