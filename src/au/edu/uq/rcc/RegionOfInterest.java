@@ -14,7 +14,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Stream;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javax.vecmath.Tuple3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,6 +28,7 @@ import utils.MinMax;
 public class RegionOfInterest
 {
 
+    public static enum Selection{AND, NOT, NONE};
     private static final Logger log = LoggerFactory.getLogger(RegionOfInterest.class);
 
     private String name;
@@ -34,6 +36,7 @@ public class RegionOfInterest
     private final Set<Face3i> faces = new HashSet<>();
     private boolean[][][] roiMask;
     private final Map<Track, List<Integer>> trackIntersections;
+    private final ObjectProperty<Selection> selectionProp = new SimpleObjectProperty<>();
 
     public RegionOfInterest(BrainIndex brainIndex, String name)
     {
@@ -49,6 +52,7 @@ public class RegionOfInterest
     public RegionOfInterest(Tuple3i dim, String name)
     {
         trackIntersections = new HashMap<>();
+        selectionProp.set(Selection.NONE);
         this.dim = dim;
         this.name = name;
         roiMask = new boolean[dim.x][dim.y][dim.z];
@@ -59,6 +63,11 @@ public class RegionOfInterest
                 Arrays.fill(roiMask[i][j], false);
             }
         }
+    }
+    
+    public ObjectProperty<Selection> getSelectionProperty()
+    {
+        return selectionProp;
     }
 
     public Tuple3i getDimensions()
@@ -185,20 +194,39 @@ public class RegionOfInterest
             );
         });
     }
+    
+    public void match(RegionOfInterest targetROI)
+    {
+        
+    }
 
-    public List<PartitionedTrack> calculateSegments(RegionOfInterest targetROI)
+    public List<PartitionedTrack> getPartitionedTracks(RegionOfInterest targetROI)
     {
         List<PartitionedTrack> partitionedTracks = new ArrayList<>();
         trackIntersections.keySet().stream().forEach((Track st) ->
-        {
+        {            
             if (targetROI.getTrackIntersection().keySet().contains(st))
-            {
+            {             
                 PartitionedTrack partitionedTrack = new PartitionedTrack(st);
                 partitionedTrack.addIntersections(this);
                 partitionedTrack.addIntersections(targetROI);
+                partitionedTracks.add(partitionedTrack);
             }
         });
         return partitionedTracks;
+    }
+    
+    public List<Track> getCommonTracks(RegionOfInterest targetROI)
+    {
+        List<Track> commonTrak = new ArrayList<>();
+        trackIntersections.keySet().stream().forEach((Track st) ->
+        {
+                if (targetROI.getTrackIntersection().keySet().contains(st))
+                {
+                    commonTrak.add(st);
+                }
+        });
+        return commonTrak;
     }
 
     public Set<Track> getTracks()
@@ -211,18 +239,10 @@ public class RegionOfInterest
         List<Track> closeTracks = new ArrayList<>();
         for (Track t : getTracks())
         {
-            MinMax interval = new MinMax(0, t.numberOfVertices());
-
-//            for (Integer i : trackIntersections.get(t))
-//            {
-//                interval.setVal(i + extension);
-//                interval.setVal(i - extension);
-//            }
-            
+            MinMax interval = new MinMax(0, t.numberOfVertices());            
             Integer i = trackIntersections.get(t).get(0);
             interval.setVal(i + extension);
             interval.setVal(i - extension);
-
             Track closeTrack = t.getSegment((int) interval.getMin(), (int) interval.getMax());
             closeTracks.add(closeTrack);
         }

@@ -95,8 +95,6 @@ public class BrainIndex
         Tuple3i i1 = new Point3i();
         Tuple3i diff = new Point3i();
 
-        // Tuple3d basePoint = boundingBox.getBasePoint();
-        // Tuple3d interval = boundingBox.getIntervalLength(dim);
         Tuple3d interval = new Point3d(1.0,1.0,1.0);
 
         List<Tuple3d> vertices = t.getVertices();

@@ -9,13 +9,12 @@ import au.edu.uq.rcc.index.BrainIndex;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.slf4j.LoggerFactory;
+import utils.TrackWriter;
 
 /**
  *
@@ -23,23 +22,21 @@ import org.slf4j.LoggerFactory;
  */
 public class MRISourceCollection
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MRISourceCollection.class);
-    File sourceDirectory;
-    List<RegionOfInterest> roiList = new ArrayList<>();
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MRISourceCollection.class);    
+    private List<RegionOfInterest> roiList = new ArrayList<>();
 
     public MRISourceCollection(File sourceDirectory, BrainIndex index)
     {
         try
         {
-            log.info("loading roi's");
-            this.sourceDirectory = sourceDirectory;
+            log.info("loading roi's");            
             Files.list(sourceDirectory.toPath())
                     .forEach(f -> 
                     {
                         long tStart = System.currentTimeMillis();
                         MRISource mask = new MRISource(f.toFile());
                         String fileName = f.getFileName().toString();
-                        RegionOfInterest roi = new RegionOfInterest(index, fileName);                        
+                        RegionOfInterest roi = new RegionOfInterest(mask, fileName);
                         roi.assignTracks(index);
                         roiList.add(roi);
                         long tElapsed = System.currentTimeMillis() - tStart;
@@ -53,21 +50,30 @@ public class MRISourceCollection
         }                
     }
     
-    public void doMap()
+    public List<RegionOfInterest> getROIList()
+    {
+        return roiList;
+    }
+    
+    public void doMap(File baseDirectory)
     {
         Runtime runtime = Runtime.getRuntime();
         List<RegionOfInterest> mapList = new ArrayList<>(roiList);
         log.info("mappings [roi -> roi, common segments, time (ms), free ram]");
         while (!mapList.isEmpty())
         {
-            RegionOfInterest sourceROI = mapList.remove(0);            
-            mapList.stream().forEach(t -> 
+            RegionOfInterest sourceROI = mapList.remove(0);       
+            mapList.parallelStream().forEach(t -> 
                 {
                     long tStart = System.currentTimeMillis();
-                    List<PartitionedTrack> segments = sourceROI.calculateSegments(t);
+                    List<PartitionedTrack> segments = sourceROI.getPartitionedTracks(t);                    
+                    File trackFileName = new File(baseDirectory, 
+                            String.format("%s-%s.tck", sourceROI.getName().replace(".nii", ""), t.getName().replace(".nii","")));
+                    TrackWriter tw = new TrackWriter(trackFileName, segments);
                     long eTime = System.currentTimeMillis() - tStart;
                     String logString = String.format("%s -> %s,%d,%d,%d", sourceROI.getName(), t.getName(), segments.size(), eTime, runtime.freeMemory());
                     log.info(logString);
+                    System.out.printf("wrote %s\n", trackFileName.getAbsolutePath());
                 });
         }
     }

@@ -7,5 +7,6 @@
 <entry key="roi-directory">roi</entry>
 <entry key="track-source">mrtrix/NC001_whole_brain_DT_STREAM.tck</entry>
 <entry key="mri-source">bet/NC001_convert_eddy_Ave_nodif_mask.nii</entry>
-<entry key="do-map">false</entry>
+<entry key="track-destination">output</entry>
+<entry key="do-map">true</entry>
 </properties>
