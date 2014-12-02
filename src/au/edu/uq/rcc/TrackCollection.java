@@ -5,6 +5,8 @@
  */
 package au.edu.uq.rcc;
 
+import au.edu.uq.rcc.index.BrainIndex;
+import au.edu.uq.rcc.index.RunnableBrainIndex;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,14 +15,13 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
-import javax.vecmath.Tuple3d;
 import org.apache.commons.io.input.SwappedDataInputStream;
-import utils.BoundingBox;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -29,20 +30,36 @@ import utils.BoundingBox;
 public class TrackCollection
 {
 
-    List<Track> trackList = new ArrayList<>();
-    BoundingBox boundingBox = new BoundingBox();
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(TrackCollection.class);
+    private List<Track> trackList = new ArrayList<>();
 
     public TrackCollection(File trackFile)
     {
+        loadTracks(trackFile, null);
+    }
+
+    public TrackCollection(File trackFile, BrainIndex bi)
+    {
+        RunnableBrainIndex rbi = new RunnableBrainIndex(bi);
+        new Thread(rbi).start();
+        loadTracks(trackFile, rbi.getTrackQueue());
+    }
+
+    private void loadTracks(File trackFile, BlockingQueue<Track> trackQueue)
+    {
         try
         {
+            log.info("loading track file '{}'", trackFile.getAbsolutePath());
             int offset = 0;
+            long fileSize = trackFile.length();
+            long logIncrement = fileSize / 10;
+            long nextLogEvent = logIncrement;
+            long filePosition = 0;
             FileReader fr = new FileReader(trackFile);
             BufferedReader br = new BufferedReader(fr);
             String line = br.readLine();
             while (!line.matches("END"))
             {
-                // System.out.printf("%s\n", line);
                 if (line.startsWith("file"))
                 {
                     offset = extractNumber(line);
@@ -50,15 +67,15 @@ public class TrackCollection
                 line = br.readLine();
             }
 
-            Files.newInputStream(trackFile.toPath());
             BufferedInputStream bufIS = new BufferedInputStream(Files.newInputStream(trackFile.toPath()));
             SwappedDataInputStream inputStream = new SwappedDataInputStream(bufIS);
-
             inputStream.skip(offset);
+            filePosition = offset;
 
             Float x = inputStream.readFloat();
             Float y = inputStream.readFloat();
             Float z = inputStream.readFloat();
+            filePosition += 12;
 
             while (!(x.isInfinite() && y.isInfinite() && z.isInfinite()))
             {
@@ -69,34 +86,44 @@ public class TrackCollection
                     x = inputStream.readFloat();
                     y = inputStream.readFloat();
                     z = inputStream.readFloat();
-                    boundingBox.add(x, y, z);
+                    filePosition += 12;
                 }
                 trackList.add(track);
-                // System.out.printf("Track: %,d, %,d\n", trackList.size(), trackList.get(trackList.size() - 1).numberOfVertices());
-                if (trackList.size() > 500 && false)
+                if (trackQueue != null)
                 {
-                    break;
+                    trackQueue.add(track);
                 }
                 x = inputStream.readFloat();
                 y = inputStream.readFloat();
                 z = inputStream.readFloat();
-            }
+                filePosition += 12;
 
+                if (filePosition > nextLogEvent)
+                {
+                    String complete = String.format("%.2f%%", (float) filePosition / fileSize * 100);
+                    log.info("read {} bytes {} done", filePosition, complete);
+                    nextLogEvent += logIncrement;
+                }
+            }
+            if (trackQueue != null)
+            {
+                trackQueue.add(RunnableBrainIndex.FINAL);
+            }
+            log.debug("loaded {} tracks", trackList.size());
         } catch (IOException ex)
         {
             Logger.getLogger(TrackCollection.class.getName()).log(Level.SEVERE, null, ex);
         }
-
     }
 
     public void scaleUp(int factor)
     {
-        
+
         if (factor < 2)
         {
             return;
         }
-        
+
         List<Track> originalList = new ArrayList<>(trackList);
         originalList.stream()
                 .forEach(t ->
@@ -114,11 +141,6 @@ public class TrackCollection
         return trackList;
     }
 
-    public BoundingBox getBoundingBox()
-    {
-        return boundingBox;
-    }
-
     private Integer extractNumber(String s)
     {
         Integer i = null;
@@ -133,11 +155,6 @@ public class TrackCollection
             throw new Error("bad trc file");
         }
         return i;
-    }
-
-    public Stream<Tuple3d> vertexStream()
-    {
-        return trackList.stream().flatMap(t -> t.getVertices().stream());
     }
 
 }

@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import javax.vecmath.Point3d;
 import javax.vecmath.Tuple3d;
-import utils.BoundingBox;
 
 /**
  *
@@ -18,15 +17,13 @@ import utils.BoundingBox;
  */
 public class Track
 {
-    //todo get rid of bounding box stuff...
+    
     private final List<Tuple3d> vertices = new ArrayList<>();
-    private final BoundingBox boundingBox = new BoundingBox();
     
     public void addPoint(double x, double y, double z)
     {
         Point3d p = new Point3d(x, y, z);
-        vertices.add(p);
-        boundingBox.add(p);
+        vertices.add(p);    
     }
     
     public void addPointList(List<Tuple3d> points)
@@ -49,11 +46,6 @@ public class Track
     public int numberOfVertices()
     {
         return vertices.size();
-    }
-    
-    public BoundingBox getBoundingBox()
-    {
-        return boundingBox;
     }
     
     @Override

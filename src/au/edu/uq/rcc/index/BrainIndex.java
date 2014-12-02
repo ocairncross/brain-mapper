@@ -7,7 +7,6 @@ package au.edu.uq.rcc.index;
 
 import au.edu.uq.rcc.Face3i;
 import au.edu.uq.rcc.MRISource;
-import au.edu.uq.rcc.RegionOfInterest;
 import au.edu.uq.rcc.Track;
 import au.edu.uq.rcc.TrackCollection;
 import java.util.ArrayList;
@@ -21,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import utils.BoundingBox;
 
 /**
- *
  * @author oliver
  */
 public class BrainIndex
@@ -29,8 +27,7 @@ public class BrainIndex
 
     private static final Logger log = LoggerFactory.getLogger(BrainIndex.class);
         
-    private Tuple3i dim = null;
-    private BoundingBox boundingBox;
+    private Tuple3i dim = null;    
     private final MRISource mriSource; // Needed to get transform from trackspace to MRISpace.
     
     ArrayList<TrackIntersection>[][][] xPlane;  // x y z
@@ -38,30 +35,28 @@ public class BrainIndex
     ArrayList<TrackIntersection>[][][] zPlane;
     
     public BrainIndex(TrackCollection tracks, MRISource mriSource)
-    {
-        
-        long tStart = System.currentTimeMillis();
-        this.dim = mriSource.getDimensions();
-        this.mriSource = mriSource;
-        this.boundingBox = tracks.getBoundingBox();
-        xPlane = initialisePlane(dim);
-        yPlane = initialisePlane(dim);
-        zPlane = initialisePlane(dim);        
-        analyseTracks(tracks);
+    {   
+        this(mriSource);
+        long tStart = System.currentTimeMillis();        
+        loadTracks(tracks);
         long eTime = (System.currentTimeMillis() - tStart);        
         log.info(String.format("indexed %,d tracks in %,dms", tracks.getTrackList().size(), eTime));
+    }
+    
+    public BrainIndex(MRISource mriSource)
+    {   
+        this.dim = mriSource.getDimensions();
+        this.mriSource = mriSource;        
+        xPlane = initialisePlane(dim);
+        yPlane = initialisePlane(dim);
+        zPlane = initialisePlane(dim);             
     }
     
     public Tuple3i getDimentions()
     {
         return dim;
     }
-    
-    public BoundingBox getBoundingBox()
-    {
-        return boundingBox;
-    }
-
+ 
     // initialise index with number of voxels.
     private ArrayList<TrackIntersection>[][][] initialisePlane(Tuple3i d)
     {        
@@ -79,7 +74,7 @@ public class BrainIndex
         return planeIndex;
     }
 
-    private void analyseTracks(TrackCollection tl)
+    private void loadTracks(TrackCollection tl)
     {
         for (Track t : tl.getTrackList())
         {
@@ -87,7 +82,7 @@ public class BrainIndex
         }
     }
 
-    private void insertTrack(Track t)
+    public void insertTrack(Track t)
     {
         Tuple3d p0 = new Point3d();
         Tuple3d p1 = new Point3d();
@@ -102,19 +97,8 @@ public class BrainIndex
         // this is a face.
         for (int i = 0; i < vertices.size() - 1; i++)
         {
-            
-            /*
-            Old method before transforms were implemented
-            p0.sub(vertices.get(i), basePoint);
-            p1.sub(vertices.get(i + 1), basePoint);
-            setIndex(i0, p0, interval);
-            setIndex(i1, p1, interval);
-            diff.sub(i1, i0);
-            */
-            
             p0 = new Point3d(vertices.get(i));
-            p1 = new Point3d(vertices.get(i + 1));
-            
+            p1 = new Point3d(vertices.get(i + 1));            
             p0 = mriSource.undoTransform(p0);
             p1 = mriSource.undoTransform(p1);            
             setIndex(i0, p0, interval);

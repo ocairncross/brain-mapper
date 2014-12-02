@@ -21,11 +21,11 @@ import utils.Utils;
 public class BrainMapper
 {
 
-    private static final Profiler profiler = new Profiler("Brain Mapper");    
+    private static final Profiler profiler = new Profiler("Brain Mapper");
     private static final File mriFile = BMProperties.getFile("mri-source");
     private static final File trackFile = BMProperties.getFile("track-source");
     private static final File roiDirectory = BMProperties.getFile("roi-directory");
-    private static final File outputDirectory = BMProperties.getFile("track-destination");    
+    private static final File outputDirectory = BMProperties.getFile("track-destination");
     private static final int scaleFactor = BMProperties.getInt("scale-factor");
     private static final boolean doMap = BMProperties.getBoolean("do-map");
     
@@ -36,11 +36,11 @@ public class BrainMapper
     {
         Utils.logInitial();
         profiler.start("load tracks");
-        TrackCollection tl = new TrackCollection(trackFile);
-        tl.scaleUp(scaleFactor);
+        TrackCollection trackCollection = new TrackCollection(trackFile);
+        trackCollection.scaleUp(scaleFactor);
         MRISource mri = new MRISource(mriFile);
         profiler.start("build index");
-        BrainIndex brainIndex = new BrainIndex(tl, mri);
+        BrainIndex brainIndex = new BrainIndex(trackCollection, mri);
         
         if (doMap)
         {

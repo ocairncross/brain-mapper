@@ -5,8 +5,10 @@
  */
 package au.edu.uq.rcc;
 
-import java.util.HashSet;
-import java.util.Set;
+import au.edu.uq.rcc.index.BrainIndex;
+import java.io.File;
+import org.slf4j.profiler.Profiler;
+import utils.BMProperties;
 
 /**
  *
@@ -15,20 +17,20 @@ import java.util.Set;
 public class Foo
 {
 
+    private static final File trackFile = BMProperties.getFile("track-source");
+    private static final File mriFile = BMProperties.getFile("mri-source");
+    private static final Profiler profiler = new Profiler("Brain Mapper");
+    
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args)
     {
-        
-        System.out.printf("%d\n", (int) (10.3234 / 1.2));
- 
-        
+       profiler.start("load tracks");
+       BrainIndex brainIndex = new BrainIndex(new MRISource(mriFile));
+       TrackCollection tc = new TrackCollection(trackFile, brainIndex); 
+       profiler.stop();
+       profiler.print();
     }
-    
-  
-    
-  
- 
-        
+
 }
