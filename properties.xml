@@ -2,7 +2,6 @@
 <!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
 <properties>
 <comment>brain-mapper-props</comment>
-<entry key="scale-factor">1</entry>
 <entry key="base-directory">/media/oliver/A066DA6266DA392C/projects/brain/human/NC001</entry>
 <entry key="roi-directory">roi</entry>
 <entry key="track-source">mrtrix/NC001_whole_brain_DT_STREAM.tck</entry>

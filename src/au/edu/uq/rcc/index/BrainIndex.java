@@ -17,7 +17,6 @@ import javax.vecmath.Tuple3d;
 import javax.vecmath.Tuple3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import utils.BoundingBox;
 
 /**
  * @author oliver
@@ -25,10 +24,8 @@ import utils.BoundingBox;
 public class BrainIndex
 {
 
-    private static final Logger log = LoggerFactory.getLogger(BrainIndex.class);
-        
+    private static final Logger log = LoggerFactory.getLogger(BrainIndex.class);        
     private Tuple3i dim = null;    
-    private final MRISource mriSource; // Needed to get transform from trackspace to MRISpace.
     
     ArrayList<TrackIntersection>[][][] xPlane;  // x y z
     ArrayList<TrackIntersection>[][][] yPlane;
@@ -46,7 +43,7 @@ public class BrainIndex
     public BrainIndex(MRISource mriSource)
     {   
         this.dim = mriSource.getDimensions();
-        this.mriSource = mriSource;        
+        // this.mriSource = mriSource;        
         xPlane = initialisePlane(dim);
         yPlane = initialisePlane(dim);
         zPlane = initialisePlane(dim);             
@@ -90,7 +87,9 @@ public class BrainIndex
         Tuple3i i1 = new Point3i();
         Tuple3i diff = new Point3i();
 
-        Tuple3d interval = new Point3d(1.0,1.0,1.0);
+//        Tuple3d interval = new Point3d(1.0,1.0,1.0);
+//        Tuple3d voxelOriginTransform = new Point3d(interval);
+//        voxelOriginTransform.scale(0.5);
 
         List<Tuple3d> vertices = t.getVertices();
         // Determine where intervals are spanned by a track fragment
@@ -98,11 +97,10 @@ public class BrainIndex
         for (int i = 0; i < vertices.size() - 1; i++)
         {
             p0 = new Point3d(vertices.get(i));
-            p1 = new Point3d(vertices.get(i + 1));            
-            p0 = mriSource.undoTransform(p0);
-            p1 = mriSource.undoTransform(p1);            
-            setIndex(i0, p0, interval);
-            setIndex(i1, p1, interval);
+            p1 = new Point3d(vertices.get(i + 1));
+            
+            setIndex(i0, p0);
+            setIndex(i1, p1);
             diff.sub(i1, i0);
             checkDiff(diff, p0, p1);
             
@@ -125,28 +123,14 @@ public class BrainIndex
     {
         if (Math.abs(d.x) > 1 || Math.abs(d.y) > 1 || Math.abs(d.z) > 1)
         {
-            System.out.printf("Diff %s is bad. %s -> %s", d.toString(), p1.toString(), p2.toString());
-            
+            System.out.printf("Diff %s is bad. %s -> %s", d.toString(), p1.toString(), p2.toString());            
             throw new Error("bad index calculation");
         }
     }
-    
-    public BoundingBox getTransformedBB(TrackCollection tl)
-    {
-        BoundingBox bb = new BoundingBox();
-        tl.getTrackList()
-                .stream()
-                .forEach(t -> {t.getVertices()
-                        .stream()
-                        .forEach(v -> bb.add(mriSource.undoTransform(v)));
-                  });                
-        return bb;
-    }
 
-    private void setIndex(Tuple3i index, Tuple3d p, Tuple3d interval)
+    private void setIndex(Tuple3i index, Tuple3d p)
     {
-        index.set((int) (p.x / interval.x), (int) (p.y / interval.y), (int) (p.z / interval.z));
-        
+        index.set((int) p.x, (int) p.y, (int) p.z);        
     }
     
     public ArrayList<TrackIntersection> getTrackIntersections(Face3i face)

@@ -20,6 +20,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import javax.vecmath.Point3d;
+import javax.vecmath.Tuple3d;
 import org.apache.commons.io.input.SwappedDataInputStream;
 import org.slf4j.LoggerFactory;
 
@@ -27,18 +29,22 @@ import org.slf4j.LoggerFactory;
  *
  * @author oliver
  */
-public class TrackCollection
+public class TrackCollection implements TrackProvider
 {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(TrackCollection.class);
-    private List<Track> trackList = new ArrayList<>();
+    private final List<Track> trackList = new ArrayList<>();
+    private Transform transform = null;
+    private String name;
 
-    public TrackCollection(File trackFile)
+    public TrackCollection(File trackFile, Transform transform)
     {
+        this.transform = transform;
+        this.name = trackFile.getName();
         loadTracks(trackFile, null);
     }
 
-    public TrackCollection(File trackFile, BrainIndex bi)
+    public TrackCollection(File trackFile, Transform transform, BrainIndex bi)
     {
         RunnableBrainIndex rbi = new RunnableBrainIndex(bi);
         new Thread(rbi).start();
@@ -82,7 +88,12 @@ public class TrackCollection
                 Track track = new Track();
                 while (!(x.isNaN() && y.isNaN() && z.isNaN()))
                 {
-                    track.addPoint(x, y, z);
+                    Tuple3d p = new Point3d(x, y, z);
+                    if (transform != null)
+                    {
+                        p = transform.undo(p);
+                    }
+                    track.addPoint(p);
                     x = inputStream.readFloat();
                     y = inputStream.readFloat();
                     z = inputStream.readFloat();
@@ -107,38 +118,25 @@ public class TrackCollection
             }
             if (trackQueue != null)
             {
-                trackQueue.add(RunnableBrainIndex.FINAL);
+                trackQueue.put(RunnableBrainIndex.FINAL);
             }
             log.debug("loaded {} tracks", trackList.size());
-        } catch (IOException ex)
+        } catch (InterruptedException | IOException ex)
         {
             Logger.getLogger(TrackCollection.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 
-    public void scaleUp(int factor)
-    {
-
-        if (factor < 2)
-        {
-            return;
-        }
-
-        List<Track> originalList = new ArrayList<>(trackList);
-        originalList.stream()
-                .forEach(t ->
-                        {
-                            for (int i = 0; i < factor; i++)
-                            {
-                                trackList.add(t);
-                            }
-                }
-                );
-    }
-
+    @Override
     public List<Track> getTrackList()
     {
         return trackList;
+    }
+    
+    @Override
+    public String getName()
+    {
+        return name;
     }
 
     private Integer extractNumber(String s)

@@ -15,11 +15,11 @@ import java.util.logging.Logger;
  *
  * @author oliver
  */
-public class RunnableBrainIndex implements Runnable
+public class RunnableBrainIndex<T extends Track> implements Runnable
 {
 
     private final BrainIndex brainIndex;
-    private final BlockingQueue<Track> trackQueue = new ArrayBlockingQueue(1024);
+    private final BlockingQueue<T> trackQueue = new ArrayBlockingQueue(1024);
     public static final Track FINAL = new Track();
 
     public RunnableBrainIndex(BrainIndex brainIndex)
@@ -27,7 +27,7 @@ public class RunnableBrainIndex implements Runnable
         this.brainIndex = brainIndex;
     }
 
-    public BlockingQueue<Track> getTrackQueue()
+    public BlockingQueue<T> getTrackQueue()
     {
         return trackQueue;
     }

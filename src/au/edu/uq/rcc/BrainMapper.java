@@ -7,9 +7,6 @@ package au.edu.uq.rcc;
 
 import au.edu.uq.rcc.index.BrainIndex;
 import java.io.File;
-import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.profiler.Profiler;
 import utils.BMProperties;
 import utils.Utils;
@@ -25,8 +22,7 @@ public class BrainMapper
     private static final File mriFile = BMProperties.getFile("mri-source");
     private static final File trackFile = BMProperties.getFile("track-source");
     private static final File roiDirectory = BMProperties.getFile("roi-directory");
-    private static final File outputDirectory = BMProperties.getFile("track-destination");
-    private static final int scaleFactor = BMProperties.getInt("scale-factor");
+    private static final File outputDirectory = BMProperties.getFile("track-destination");    
     private static final boolean doMap = BMProperties.getBoolean("do-map");
     
     /**
@@ -36,9 +32,9 @@ public class BrainMapper
     {
         Utils.logInitial();
         profiler.start("load tracks");
-        TrackCollection trackCollection = new TrackCollection(trackFile);
-        trackCollection.scaleUp(scaleFactor);
         MRISource mri = new MRISource(mriFile);
+        Transform transform = new Transform(mri.getHeader());
+        TrackCollection trackCollection = new TrackCollection(trackFile, transform);
         profiler.start("build index");
         BrainIndex brainIndex = new BrainIndex(trackCollection, mri);
         

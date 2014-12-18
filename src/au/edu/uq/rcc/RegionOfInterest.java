@@ -7,6 +7,7 @@ package au.edu.uq.rcc;
 
 import au.edu.uq.rcc.index.BrainIndex;
 import au.edu.uq.rcc.index.TrackIntersection;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,8 +15,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.IntStream;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javax.vecmath.Tuple3d;
 import javax.vecmath.Tuple3i;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,10 +257,56 @@ public class RegionOfInterest
     {
         return name;
     }
-
-    public static void printTrackIntersections(List<PartitionedTrack> trackList)
+    
+    public void manualProcessTracks(List<Track> tl, MRISource mri)
     {
-        trackList.stream().forEach(System.out::println);
+        tl.forEach(t -> 
+        {
+            trackInside(t, mri);
+            if (t.isSelected())
+            {
+                insideTracks.add(t);
+            }
+            else
+            {
+                outsideTracks.add(t);
+            }
+        });    
     }
+
+    public List<Track> getInsideTracks()
+    {
+        return insideTracks;
+    }
+
+    public List<Track> getOutsideTracks()
+    {
+        return outsideTracks;
+    }
+    
+    private List<Track> insideTracks = new ArrayList<>();
+    private List<Track> outsideTracks  = new ArrayList<>();
+    
+    private void trackInside(Track track, MRISource mriSource)
+    {
+        
+        IntStream.range(0, track.numberOfVertices())
+                .parallel()
+                .forEach((int i) -> 
+                {                    
+                    track.setSelected(false);
+                    Tuple3d v = track.getVertices().get(i);                   
+                    int x = (int) v.x;
+                    int y = (int) v.y;
+                    int z = (int) v.z;                    
+                    if(roiMask[x][y][z])
+                    {
+                        // System.out.printf("%d : %d : %d\n", track.numberOfVertices(), track.getVertexColor().size(), i);
+                        track.setColor(i, Color.red);
+                        track.setSelected(true);              
+                    }                    
+                });   
+    }
+    
 
 }
