@@ -5,7 +5,7 @@
  */
 package au.edu.uq.rcc;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  *
@@ -13,6 +13,7 @@ import java.util.List;
  */
 public interface TrackProvider
 {
-    public List<Track> getTrackList();
+    public Collection<Track> getTrackList();
     public String getName();
+    
 }

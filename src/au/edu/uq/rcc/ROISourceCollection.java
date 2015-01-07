@@ -20,12 +20,12 @@ import utils.TrackWriter;
  *
  * @author oliver
  */
-public class MRISourceCollection
+public class ROISourceCollection
 {
-    private static final org.slf4j.Logger log = LoggerFactory.getLogger(MRISourceCollection.class);    
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(ROISourceCollection.class);    
     private List<RegionOfInterest> roiList = new ArrayList<>();
 
-    public MRISourceCollection(File sourceDirectory, BrainIndex index)
+    public ROISourceCollection(File sourceDirectory, BrainIndex index)
     {
         try
         {
@@ -46,7 +46,7 @@ public class MRISourceCollection
         } 
         catch (IOException ex)
         {
-            Logger.getLogger(MRISourceCollection.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ROISourceCollection.class.getName()).log(Level.SEVERE, null, ex);
         }                
     }
     

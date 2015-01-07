@@ -43,7 +43,7 @@ public class BrainIndex
     public BrainIndex(MRISource mriSource)
     {   
         this.dim = mriSource.getDimensions();
-        // this.mriSource = mriSource;        
+        // this.mriSource = mriSource;
         xPlane = initialisePlane(dim);
         yPlane = initialisePlane(dim);
         zPlane = initialisePlane(dim);             

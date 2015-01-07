@@ -154,5 +154,11 @@ public class TrackCollection implements TrackProvider
         }
         return i;
     }
+    
+    @Override
+    public String toString()
+    {
+        return getName();
+    }
 
 }

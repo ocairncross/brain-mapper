@@ -41,7 +41,7 @@ public class BrainMapper
         if (doMap)
         {
             profiler.start("build ROI collections");
-            MRISourceCollection roiCollection = new MRISourceCollection(roiDirectory, brainIndex);
+            ROISourceCollection roiCollection = new ROISourceCollection(roiDirectory, brainIndex);
             roiCollection.doMap(outputDirectory);
         }
         
