@@ -85,21 +85,6 @@ public class Face3i extends Tuple4i
         }
     }
     
-//    public void initialiseIntersections()
-//    {
-//        intersectionSet = new HashSet<>();
-//    }
-    
-//    public void addIntersection(TrackIntersection i)
-//    {
-//        intersectionSet.add(i);
-//    }
-    
-//    public Set<TrackIntersection> getIntersections()
-//    {
-//        return intersectionSet;
-//    }
-    
     public int numberOfTracks()
     {
         if (intersectionSet == null)

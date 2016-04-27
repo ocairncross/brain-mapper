@@ -37,7 +37,10 @@ public class ROISourceCollection
                         MRISource mask = new MRISource(f.toFile());
                         String fileName = f.getFileName().toString();
                         RegionOfInterest roi = new RegionOfInterest(mask, fileName);
-                        roi.assignTracks(index);
+                        if (index != null)
+                        {
+                            roi.assignTracks(index);                            
+                        }
                         roiList.add(roi);
                         long tElapsed = System.currentTimeMillis() - tStart;
                         log.info("created ROI {}  with {} tracks in {}ms", fileName, roi.numberOfTracks(), tElapsed);
@@ -55,7 +58,7 @@ public class ROISourceCollection
         return roiList;
     }
     
-    public void doMap(File baseDirectory)
+    public void doMap(File baseDirectory, MRISource mriSource)
     {
         Runtime runtime = Runtime.getRuntime();
         List<RegionOfInterest> mapList = new ArrayList<>(roiList);
@@ -69,7 +72,7 @@ public class ROISourceCollection
                     List<PartitionedTrack> segments = sourceROI.getPartitionedTracks(t);                    
                     File trackFileName = new File(baseDirectory, 
                             String.format("%s-%s.tck", sourceROI.getName().replace(".nii", ""), t.getName().replace(".nii","")));
-                    TrackWriter tw = new TrackWriter(trackFileName, segments);
+                    TrackWriter tw = new TrackWriter(trackFileName, segments, mriSource);
                     long eTime = System.currentTimeMillis() - tStart;
                     String logString = String.format("%s -> %s,%d,%d,%d", sourceROI.getName(), t.getName(), segments.size(), eTime, runtime.freeMemory());
                     log.info(logString);

@@ -300,8 +300,7 @@ public class RegionOfInterest
                     int y = (int) v.y;
                     int z = (int) v.z;                    
                     if(roiMask[x][y][z])
-                    {
-                        // System.out.printf("%d : %d : %d\n", track.numberOfVertices(), track.getVertexColor().size(), i);
+                    {                        
                         track.setColor(i, Color.red);
                         track.setSelected(true);              
                     }                    

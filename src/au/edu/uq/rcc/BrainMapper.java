@@ -42,7 +42,7 @@ public class BrainMapper
         {
             profiler.start("build ROI collections");
             ROISourceCollection roiCollection = new ROISourceCollection(roiDirectory, brainIndex);
-            roiCollection.doMap(outputDirectory);
+            roiCollection.doMap(outputDirectory, mri);
         }
         
         profiler.stop();

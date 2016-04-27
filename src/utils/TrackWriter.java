@@ -5,8 +5,10 @@
  */
 package utils;
 
+import au.edu.uq.rcc.MRISource;
 import au.edu.uq.rcc.PartitionedTrack;
 import au.edu.uq.rcc.TrackInterval;
+import au.edu.uq.rcc.Transform;
 import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -28,7 +30,7 @@ public class TrackWriter
 
     File trackFile;
 
-    public TrackWriter(File trackFile, List<PartitionedTrack> trackList)
+    public TrackWriter(File trackFile, List<PartitionedTrack> trackList, MRISource mriSource)
     {
         this.trackFile = trackFile;
         try
@@ -36,7 +38,8 @@ public class TrackWriter
             FileOutputStream fso = new FileOutputStream(trackFile);
             BufferedOutputStream bos = new BufferedOutputStream(fso);
             DataOutputStream dos = new DataOutputStream(bos);
-            dos.writeChars(getHeader());
+            Transform transform = mriSource.getTransform();            
+            dos.writeBytes(getHeader());
             for (PartitionedTrack pt : trackList)
             {
                 for (TrackInterval ti : pt.getTrackIntervals())
@@ -44,6 +47,7 @@ public class TrackWriter
                     for (int i = ti.getStart(); i < ti.getEnd(); i++)
                     {
                         Tuple3d p = ti.getTrack().getVertices().get(i);
+                        p = transform.apply(p);
                         dos.writeFloat((float) p.x);
                         dos.writeFloat((float) p.y);
                         dos.writeFloat((float) p.z);
@@ -59,7 +63,8 @@ public class TrackWriter
             dos.flush();
             dos.close();
 
-        } catch (IOException ex)
+        }
+        catch (IOException ex)
         {
             Logger.getLogger(TrackWriter.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -68,7 +73,7 @@ public class TrackWriter
     private static String getHeader()
     {
         List<String> headerLines = Arrays.asList(
-                "mrtirx tracks\n",
+                "mrtrix tracks\n",
                 "datatype: Float32BE\n",
                 String.format("file . %d\n", 0),
                 "END\n");
@@ -77,7 +82,7 @@ public class TrackWriter
         do
         {
             initialSize = headerSize(headerLines);
-            headerLines.set(2, String.format("file . %d\n", initialSize));
+            headerLines.set(2, String.format("file: . %d\n", initialSize));
             newSize = headerSize(headerLines);
         } while (initialSize != newSize);
         return headerLines.stream().collect(Collectors.joining());

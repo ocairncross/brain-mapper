@@ -14,6 +14,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
 import java.util.logging.Level;
@@ -128,7 +129,7 @@ public class TrackCollection implements TrackProvider
     }
 
     @Override
-    public List<Track> getTrackList()
+    public Collection<Track> getTrackList()
     {
         return trackList;
     }

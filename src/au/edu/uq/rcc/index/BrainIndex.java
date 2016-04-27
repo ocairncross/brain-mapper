@@ -42,8 +42,7 @@ public class BrainIndex
     
     public BrainIndex(MRISource mriSource)
     {   
-        this.dim = mriSource.getDimensions();
-        // this.mriSource = mriSource;
+        this.dim = mriSource.getDimensions();        
         xPlane = initialisePlane(dim);
         yPlane = initialisePlane(dim);
         zPlane = initialisePlane(dim);             
@@ -81,15 +80,11 @@ public class BrainIndex
 
     public void insertTrack(Track t)
     {
-        Tuple3d p0 = new Point3d();
+        Tuple3d p0 = new Point3d(); 
         Tuple3d p1 = new Point3d();
         Tuple3i i0 = new Point3i();
         Tuple3i i1 = new Point3i();
         Tuple3i diff = new Point3i();
-
-//        Tuple3d interval = new Point3d(1.0,1.0,1.0);
-//        Tuple3d voxelOriginTransform = new Point3d(interval);
-//        voxelOriginTransform.scale(0.5);
 
         List<Tuple3d> vertices = t.getVertices();
         // Determine where intervals are spanned by a track fragment
